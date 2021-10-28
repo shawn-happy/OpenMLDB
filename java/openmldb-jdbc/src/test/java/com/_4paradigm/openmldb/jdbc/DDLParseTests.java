@@ -14,7 +14,7 @@ import org.testng.Assert;
 import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
-//@Ignore
+@Ignore
 public class DDLParseTests {
 
   @Test

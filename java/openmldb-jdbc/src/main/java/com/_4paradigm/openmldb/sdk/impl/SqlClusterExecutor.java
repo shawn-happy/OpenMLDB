@@ -286,26 +286,27 @@ public class SqlClusterExecutor implements SqlExecutor {
             }
             SimpleMapVector simpleMaps = result.get(tableName);
             if (!simpleMaps.isEmpty()) {
-                SimpleMap simpleMap = simpleMaps.get(0);
-//                for (SimpleMap simpleMap : simpleMaps) {
-                  String tsName = simpleMap.get("ts_name");
-                  String ttlTypeStr = simpleMap.get("ttl_type");
-                  TTLType ttlType = TTLType.toTTLType(ttlTypeStr);
-                  // TODO ttl calculation logic
-                  String absTTL = simpleMap.get("abs_ttl");
-                  String colList = simpleMap.get("col_list");
-                  String index;
-                  if (null == tsName || tsName.length() == 0) {
-                    index = String.format("index(key=(%s), ttl=%s, ttl_type=%s)", colList, absTTL,
+                for (SimpleMap simpleMap : simpleMaps) {
+
+                    String tsName = simpleMap.get("ts_name");
+                    String ttlTypeStr = simpleMap.get("ttl_type");
+                    TTLType ttlType = TTLType.toTTLType(ttlTypeStr);
+
+                    // TODO ttl calculation logic
+                    String absTTL = simpleMap.get("abs_ttl");
+                    String colList = simpleMap.get("col_list");
+                    String index;
+                    if (null == tsName || tsName.length() == 0) {
+                        index = String.format("index(key=(%s), ttl=%s, ttl_type=%s)", colList, absTTL,
                             ttlTypeStr);
-                  } else {
-                    index = String
-                            .format("index(key=(%s), ts=`%s`, ttl=%s, ttl_type=%s)", colList, tsName,
+                    } else {
+                        index = String
+                                .format("index(key=(%s), ts=`%s`, ttl=%s, ttl_type=%s)", colList, tsName,
                                     absTTL, ttlTypeStr);
-                  }
-                  sb.append(index);
-                  sb.append(",\n");
-//                }
+                    }
+                    sb.append(index);
+                    sb.append(",\n");
+                }
             }
             sb.deleteCharAt(sb.lastIndexOf(",\n"));
             sb.append("\n);");
