@@ -21,8 +21,10 @@ import com._4paradigm.openmldb.common.LibraryLoader;
 import com._4paradigm.openmldb.sdk.*;
 import com._4paradigm.openmldb.jdbc.CallablePreparedStatement;
 import com._4paradigm.openmldb.jdbc.SQLResultSet;
-import com._4paradigm.openmldb.sdk.*;
+import com._4paradigm.openmldb.sdk.DataType;
 import com._4paradigm.openmldb.sdk.Schema;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -261,6 +263,79 @@ public class SqlClusterExecutor implements SqlExecutor {
         spInfo.setInputTables(procedureInfo.GetTables());
         procedureInfo.delete();
         return spInfo;
+    }
+
+    @Override
+    public String[] genDDL(String sql, Map<String, List<Map<String, String>>> tableMap, SimpleMapVectorMap result)
+            throws SQLException {
+        List<String> ddlList = new ArrayList<>();
+        Set<String> tableNameSet = tableMap.keySet();
+        for (String tableName : tableNameSet) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("CREATE TABLE IF NOT EXISTS ");
+            sb.append(tableName);
+            sb.append("(\n");
+            List<Map<String, String>> columnMapList = tableMap.get(tableName);
+            for (Map<String, String> columnMap : columnMapList) {
+                String name = columnMap.get("name");
+                String type = DataType.toSQLType(columnMap.get("type"));
+                sb.append(name);
+                sb.append(" ");
+                sb.append(type);
+                sb.append(",\n");
+            }
+            SimpleMapVector simpleMaps = result.get(tableName);
+            if (!simpleMaps.isEmpty()) {
+                SimpleMap simpleMap = simpleMaps.get(0);
+//                for (SimpleMap simpleMap : simpleMaps) {
+                  String tsName = simpleMap.get("ts_name");
+                  String ttlTypeStr = simpleMap.get("ttl_type");
+                  TTLType ttlType = TTLType.toTTLType(ttlTypeStr);
+                  // TODO ttl calculation logic
+                  String absTTL = simpleMap.get("abs_ttl");
+                  String colList = simpleMap.get("col_list");
+                  String index;
+                  if (null == tsName || tsName.length() == 0) {
+                    index = String.format("index(key=(%s), ttl=%s, ttl_type=%s)", colList, absTTL,
+                            ttlTypeStr);
+                  } else {
+                    index = String
+                            .format("index(key=(%s), ts=`%s`, ttl=%s, ttl_type=%s)", colList, tsName,
+                                    absTTL, ttlTypeStr);
+                  }
+                  sb.append(index);
+                  sb.append(",\n");
+//                }
+            }
+            sb.deleteCharAt(sb.lastIndexOf(",\n"));
+            sb.append("\n);");
+            ddlList.add(sb.toString());
+        }
+        String[] ddlArr = new String[ddlList.size()];
+        return ddlList.toArray(ddlArr);
+    }
+
+    @Override
+    public SimpleMapVectorMap getColumnKey(String sql, Map<String, List<Map<String, String>>> tableMap) {
+        if (tableMap == null || tableMap.isEmpty()) {
+            return null;
+        }
+        SimpleMapVectorMap simpleMapVectorMap = new SimpleMapVectorMap();
+        Set<String> tableNameSet = tableMap.keySet();
+        for (String tableName : tableNameSet) {
+            List<Map<String, String>> columnMapList = tableMap.get(tableName);
+            SimpleMapVector simpleMapVector = new SimpleMapVector();
+            for (Map<String, String> columnMap : columnMapList) {
+                SimpleMap simpleMap = new SimpleMap();
+                String name = columnMap.get("name");
+                String type = columnMap.get("type");
+                simpleMap.put("name", name);
+                simpleMap.put("type", type);
+                simpleMapVector.add(simpleMap);
+            }
+            simpleMapVectorMap.put(tableName, simpleMapVector);
+        }
+        return sqlRouter.ExecuteDDLParse(sql, simpleMapVectorMap);
     }
 
     @Override

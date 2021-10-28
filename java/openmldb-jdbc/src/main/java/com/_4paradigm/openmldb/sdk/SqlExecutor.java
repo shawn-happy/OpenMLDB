@@ -21,6 +21,7 @@ import com._4paradigm.openmldb.jdbc.CallablePreparedStatement;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public interface SqlExecutor {
     boolean createDB(String db);
@@ -60,6 +61,10 @@ public interface SqlExecutor {
     Schema getTableSchema(String dbName, String tableName) throws SQLException;
 
     ProcedureInfo showProcedure(String dbName, String proName) throws SQLException;
+
+    String[] genDDL(String sql, Map<String, List<Map<String, String>>> tableMap, SimpleMapVectorMap result) throws SQLException;
+
+    SimpleMapVectorMap getColumnKey(String sql, Map<String, List<Map<String, String>>> tableMap);
 
     void close();
 }

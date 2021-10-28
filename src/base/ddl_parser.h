@@ -175,9 +175,8 @@ class DDLParser {
         return ExtractIndexes(sql, db, &session);
     }
 
-    static IndexMap ExtractIndexes(
-        const std::string& sql,
-        const std::map<std::string, ::google::protobuf::RepeatedPtrField<::openmldb::common::ColumnDesc>>& schemas) {
+    template <typename T>
+    static IndexMap ExtractIndexes(const std::string& sql, T schemas) {
         ::hybridse::type::Database db;
         std::string tmp_db = "temp_" + std::to_string(::baidu::common::timer::get_micros() / 1000);
         db.set_name(tmp_db);
@@ -251,10 +250,8 @@ class DDLParser {
         return true;
     }
 
-    static void AddTables(
-        const std::map<std::string, ::google::protobuf::RepeatedPtrField<::openmldb::common::ColumnDesc>>& schema,
-        hybridse::type::Database* db) {
-        std::vector<::hybridse::type::TableDef> defs;
+    template <typename T>
+    static void AddTables(T& schema, hybridse::type::Database* db) {
         for (auto& table : schema) {
             // add to database
             auto def = db->add_tables();

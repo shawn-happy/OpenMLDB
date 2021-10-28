@@ -138,6 +138,37 @@ class SQLRouter {
 
     virtual std::shared_ptr<hybridse::sdk::Schema> GetTableSchema(
         const std::string& db, const std::string& table_name) = 0;
+
+    /*
+     * return ddl statements
+     * schemas example:
+     * {
+     *  "table1" : [
+     *      {
+     *          "name": "col1",
+     *          "type": "kTypeString"
+     *      },
+     *      {
+     *          "name": "col2",
+     *          "type": "kTypeInt64"
+     *      }
+     *  ],
+     *  "table2": [
+     *      {
+     *          "name": "col1",
+     *          "type": "kTypeString"
+     *      },
+     *      {
+     *          "name": "col2",
+     *          "type": "kTypeInt64"
+     *      }
+     *  ]
+     * }
+     *
+     * enum ColumnType: hybridse::sdk::DataType
+     */
+    virtual std::map<std::string, std::vector<std::map<std::string, std::string>>> ExecuteDDLParse(
+        const std::string& sql, const std::map<std::string, std::vector<std::map<std::string, std::string>>>& schemas);
 };
 
 std::shared_ptr<SQLRouter> NewClusterSQLRouter(const SQLRouterOptions& options);

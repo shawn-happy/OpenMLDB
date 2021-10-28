@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 
+#include "base/ddl_parser.h"
 #include "boost/none.hpp"
 #include "brpc/channel.h"
 #include "common/timer.h"
@@ -1544,6 +1545,60 @@ std::shared_ptr<hybridse::sdk::Schema> SQLClusterRouter::GetTableSchema(
         LOG(ERROR) << "Failed to convert schema for " + table_name + "in db " + db;
     }
     return {};
+}
+
+std::map<std::string, std::vector<std::map<std::string, std::string>>> ExecuteDDLParse(
+    const std::string& sql, const std::map<std::string, std::vector<std::map<std::string, std::string>>>& table_map) {
+    using openmldb::base::DDLParser;
+    std::map<std::string, std::vector<openmldb::common::ColumnDesc>> table_desc_map;
+    for (const auto& table_item : table_map) {
+        std::string table_name = table_item.first;
+        std::vector<std::map<std::string, std::string>> column_list = table_item.second;
+        std::vector<openmldb::common::ColumnDesc> column_desc_list;
+        for (const auto& column_map : column_list) {
+            openmldb::common::ColumnDesc column_desc;
+            std::string column_name = column_map.find("name")->second;
+            std::string column_type = column_map.find("type")->second;
+            column_desc.set_name(column_name);
+            column_desc.set_data_type(openmldb::catalog::SchemaAdapter::ConvertType(column_type));
+            column_desc_list.push_back(column_desc);
+        }
+        table_desc_map.insert(std::make_pair(table_name, column_desc_list));
+    }
+    openmldb::base::IndexMap index_map = openmldb::base::DDLParser::ExtractIndexes(sql, table_desc_map);
+    std::map<std::string, std::vector<std::map<std::string, std::string>>> ddl_parse_result;
+    for (auto& index : index_map) {
+        std::string table_name = index.first;
+        std::vector<openmldb::common::ColumnKey> column_key_list = index.second;
+        std::vector<std::map<std::string, std::string>> column_key_map_list;
+        for (auto& column_key : column_key_list) {
+            std::map<std::string, std::string> column_key_map;
+            auto col_name_list = column_key.col_name();
+            auto flag = column_key.flag();
+            auto ts_name = column_key.ts_name();
+            auto index_name = column_key.index_name();
+            auto ttl = column_key.ttl();
+            auto ttl_type = ttl.ttl_type();
+            auto abs_ttl = ttl.abs_ttl();
+            auto lat_ttl = ttl.lat_ttl();
+            std::string col_list_str;
+            for (auto& col : col_name_list) {
+                col_list_str += col + ",";
+            }
+            col_list_str = col_list_str.substr(0, col_list_str.length() - 1);
+            column_key_map.insert(std::make_pair("col_list", col_list_str));
+            column_key_map.insert(std::make_pair("flag", std::to_string(flag)));
+            column_key_map.insert(std::make_pair("ts_name", ts_name));
+            column_key_map.insert(std::make_pair("index_name", index_name));
+            column_key_map.insert(
+                std::make_pair("ttl_type", openmldb::catalog::SchemaAdapter::convertTTLType(ttl_type)));
+            column_key_map.insert(std::make_pair("abs_ttl", std::to_string(abs_ttl)));
+            column_key_map.insert(std::make_pair("lat_ttl", std::to_string(lat_ttl)));
+            column_key_map_list.push_back(column_key_map);
+        }
+        ddl_parse_result.insert(std::make_pair(table_name, column_key_map_list));
+    }
+    return ddl_parse_result;
 }
 
 }  // namespace sdk

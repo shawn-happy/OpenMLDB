@@ -21,6 +21,7 @@
 %include stl.i
 %include stdint.i
 %include std_vector.i
+%include std_map.i
 #ifdef SWIGJAVA
 %include various.i
 %apply char *BYTE { char *string_buffer_var_name };
@@ -39,8 +40,12 @@
 %shared_ptr(hybridse::sdk::ProcedureInfo);
 %shared_ptr(openmldb::sdk::QueryFuture);
 %shared_ptr(openmldb::sdk::TableReader);
+%shared_ptr(openmldb::common::ColumnKey);
 %template(VectorUint32) std::vector<uint32_t>;
 %template(VectorString) std::vector<std::string>;
+%template(SimpleMap) std::map<std::string, std::string>;
+%template(SimpleMapVector) std::vector<std::map<std::string, std::string>>;
+%template(SimpleMapVectorMap) std::map<std::string, std::vector<std::map<std::string, std::string>>>;
 
 %{
 #include "sdk/sql_router.h"

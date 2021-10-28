@@ -378,6 +378,47 @@ class SchemaAdapter {
         }
     }
 
+    static openmldb::type::DataType ConvertType(const std::string& type) {
+        if (type == "kBool") {
+            return openmldb::type::kBool;
+        } else if (type == "kSmallInt") {
+            return openmldb::type::kSmallInt;
+        } else if (type == "kInt") {
+            return openmldb::type::kInt;
+        } else if (type == "kBigInt") {
+            return openmldb::type::kBigInt;
+        } else if (type == "kFloat") {
+            return openmldb::type::kFloat;
+        } else if (type == "kDouble") {
+            return openmldb::type::kDouble;
+        } else if (type == "kDate") {
+            return openmldb::type::kDate;
+        } else if (type == "kTimestamp") {
+            return openmldb::type::kTimestamp;
+        } else if (type == "kVarchar") {
+            return openmldb::type::kVarchar;
+        } else if (type == "kString") {
+            return openmldb::type::kString;
+        }
+    }
+
+    static std::string convertTTLType(openmldb::type::TTLType& ttl_type) {
+        switch (ttl_type) {
+            case openmldb::type::TTLType::kAbsAndLat:
+                return "kAbsAndLat";
+            case openmldb::type::TTLType::kAbsOrLat:
+                return "kAbsOrLat";
+            case openmldb::type::TTLType::kAbsoluteTime:
+                return "kAbsoluteTime";
+            case openmldb::type::TTLType::kLatestTime:
+                return "kLatestTime";
+            case openmldb::type::TTLType::kRelativeTime:
+                return "kRelativeTime";
+            default:
+                return "";
+        }
+    }
+
     static bool ConvertType(const hybridse::type::ColumnDef& sql_column, openmldb::common::ColumnDesc* fedb_column) {
         if (fedb_column == nullptr) {
             LOG(WARNING) << "fedb_column is null";
